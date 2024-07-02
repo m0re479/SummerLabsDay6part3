@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">ProjectDay6SummerLabs</string>
+    <string name="id">Employee ID: </string>
+    <string name="name">Employee Name: </string>
+    <string name="soc_sec">Employee Soc Sec #</string>
+    <string name="salary">Employee salary: </string>
+    <string name="engineer">Engineer</string>
+    <string name="manager">Manager</string>
+    <string name="admin">Admin</string>
+    <string name="director">Director</string>
+</resources>
