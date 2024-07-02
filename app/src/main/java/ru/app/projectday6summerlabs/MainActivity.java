@@ -2,21 +2,37 @@ package ru.app.projectday6summerlabs;
 
 import android.os.Bundle;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import ru.app.projectday6summerlabs.domain.Admin;
+import ru.app.projectday6summerlabs.domain.Director;
+import ru.app.projectday6summerlabs.domain.Employee;
+import ru.app.projectday6summerlabs.domain.Engineer;
+import ru.app.projectday6summerlabs.domain.Manager;
 
 public class MainActivity extends AppCompatActivity {
     EditText editTextId, editTextName, editTextSoc_sec, editTextSalary;
     String idStr, nameStr, soc_secStr, salaryStr;
     TextView result;
+
+    private Spinner spinnerPosition;
+    private LinearLayout additionalFieldsContainer;
+    private Map<String, List<String>> additionalFieldsMap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,6 +41,35 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         Button buttonAdd = findViewById(R.id.buttonAdd);
+        spinnerPosition = findViewById(R.id.spinnerPosition);
+        additionalFieldsContainer = findViewById(R.id.additional_fields_container);
+
+        additionalFieldsMap = new HashMap<>();
+        additionalFieldsMap.put("Manager", Arrays.asList("deptName"));
+        additionalFieldsMap.put("Director", Arrays.asList("deptName", "budget"));
+        additionalFieldsMap.put("Engineer", Collections.emptyList());
+        additionalFieldsMap.put("Admin", Collections.emptyList());
+        additionalFieldsMap.put("Default", Collections.emptyList());
+
+        spinnerPosition.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String selectedType = parent.getItemAtPosition(position).toString();
+                List<String> additionalFields = additionalFieldsMap.getOrDefault(selectedType, Collections.emptyList());
+
+                additionalFieldsContainer.removeAllViews();
+                for (String field : additionalFields) {
+                    EditText editText = new EditText(MainActivity.this);
+                    editText.setHint(field);
+                    additionalFieldsContainer.addView(editText);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+
+            }
+        });
 
         buttonAdd.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -49,13 +94,54 @@ public class MainActivity extends AppCompatActivity {
 
         result = findViewById(R.id.textViewResult);
 
+        String position = spinnerPosition.getSelectedItem().toString();
+
         if (idStr.isEmpty() || nameStr.isEmpty() || soc_secStr.isEmpty() || salaryStr.isEmpty()) {
             Toast.makeText(this, "Пожалуйста, введите все необходимые данные", Toast.LENGTH_SHORT).show();
         }
         else {
             int id = Integer.parseInt(idStr);
             double salary = Double.parseDouble(salaryStr);
-            result.setText("Employee ID: " + id + "\nEmployee Name: " + nameStr + "\nEmployee Soc Sec #" + soc_secStr + "\nEmployee salary: " + salary);
+            Employee employee;
+            String str = "";
+            switch (position) {
+                case "Manager":
+                    employee = new Manager(id, nameStr, soc_secStr, salary, getDeptName());
+                    str = "\nDept: " + getDeptName();
+                    break;
+                case "Director":
+
+                    employee = new Director(id, nameStr, soc_secStr, salary, getDeptName(), getBudget());
+                    str = "\nDept: " + getDeptName() + "\nBudget: " + getBudget();
+                    break;
+                case "Engineer":
+                    employee = new Engineer(id, nameStr, soc_secStr, salary);
+                    break;
+                case "Admin":
+                    employee = new Admin(id, nameStr, soc_secStr, salary);
+                    break;
+                default:
+                    Toast.makeText(this, "Пожалуйста, выберите тип сотрудника", Toast.LENGTH_SHORT).show();
+                    employee = null;
+            }
+            result.setText("Employee ID: " + employee.getEmpId() + "\nEmployee Name: " + employee.getName() +
+                    "\nEmployee Soc Sec #" + employee.getSsn() + "\nEmployee salary: " + employee.getSalary() + str);
+
+
         }
+    }
+
+    private String getDeptName() {
+        EditText deptNameEditText = (EditText) additionalFieldsContainer.getChildAt(0);
+        return deptNameEditText.getText().toString();
+    }
+
+    private double getBudget() {
+        EditText budgetEditText = (EditText) additionalFieldsContainer.getChildAt(1);
+        if (!budgetEditText.getText().toString().matches("^[1-9][0-9]+$")) {
+            Toast.makeText(this, "Введите положительное число в поле 'Budget'", Toast.LENGTH_SHORT).show();
+            return 0.0;
+        }
+        return Double.parseDouble(budgetEditText.getText().toString());
     }
 }
